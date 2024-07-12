@@ -65,31 +65,8 @@ async def on_ready():
     await bot.tree.sync()
     
 
-@bot.tree.command(name="test", description="Test to see if slash commands are working")
-async def test(interaction):
-    await interaction.response.send_message("Test")
 
-@bot.tree.command(name="mannu",description="Mannu is a good boy")
-async def slash_command(interaction):
-    await interaction.response.send_message("Hello World!")
-
-
-@bot.tree.command(name='99')
-async def nine_nine(interaction):
-    "Simple test command that show a different message"
-    brooklyn_99_quotes = [
-        'I\'m the human form of the 💯 emoji.',
-        'Bingpot!',
-        (
-            'Cool. Cool cool cool cool cool cool cool, '
-            'no doubt no doubt no doubt no doubt.'
-        ),
-    ]
-
-    response = random.choice(brooklyn_99_quotes)
-    await interaction.response.send_message(response)
-
-@bot.tree.command(name="setgender", description="set the gender for your futur queries")
+@bot.tree.command(name="set-gender", description="set the gender for your futur queries")
 async def setGender(interaction: discord.Interaction, gender:str):
     userGender[interaction.user] = gender
     await interaction.response.send_message(f'{interaction.user} set gender to {gender}')
@@ -98,7 +75,6 @@ async def setGender(interaction: discord.Interaction, gender:str):
 @bot.tree.command(name="get_translation", description="Get proteic sequence of a cds in text")
 async def getsequencetxt(interaction: discord.Interaction, cds:str):
     "Get proteic sequence of a cds in text"
-    found = False
 
     if interaction.user in userGender:
         gender = userGender[interaction.user]
@@ -111,8 +87,7 @@ async def getsequencetxt(interaction: discord.Interaction, cds:str):
     urlGetCDS = APIURL+'/Feature/feat/CDS/'+ cds
     jsonStr= requests.get(urlGetCDS, cookies=cookies).text
     data = json.loads(jsonStr)
-    if 'id' in data[0] : 
-        print(data[0]['id'])
+    if data!=None and 'id' in data[0] : 
         urlGetTrans = APIURL+'/Feature/product/'+ str(data[0]['id'])
         seqArray= json.loads(requests.get(urlGetTrans, cookies=cookies).text)
         output = '```>'+cds+'\n'
