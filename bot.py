@@ -11,6 +11,7 @@ import configparser
 import sys
 import settings
 
+#
 logger = settings.logging.getLogger("bot")
 
 intents = discord.Intents.default()
