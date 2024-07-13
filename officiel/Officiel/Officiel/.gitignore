@@ -1,6 +1,0 @@
-*cfg
-bot_env/*
-logs/*
-*.pyc
-officiel/env/*
-bot.png
