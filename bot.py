@@ -1,33 +1,63 @@
-import os
-import random 
-import json
-import requests
-
 import discord
-from discord.ext import commands
-from discord import app_commands
-
+import discord.ext
+import requests
+import json
 import configparser
 import sys
-import settings
 
-#
-logger = settings.logging.getLogger("bot")
+from discord import app_commands
 
-intents = discord.Intents.default()
-intents.message_content = True
-    
-#client = discord.Client(intents=intents)
-bot = commands.Bot(command_prefix='/',intents=intents)
+intents = discord.Intents.all() 
+client = discord.Client(intents=intents)
+tree = discord.app_commands.CommandTree(client)
 
 userGender = {}
-# todo a mettre dans le fichier de config
-#   
-pierrick = '773562699102814228'
-papa = '789041302556901427' 
+
+key = None
+pierrick = None
+papa = None
+sequence = None
+specices = None
+web = None
+add = None
+urlGender = None
+gettrans = None
+
+try:
+    config = configparser.ConfigParser()
+    with open("bot.cfg") as f:
+        config.read_file(f)
+
+        if 'CONFIG' in config:
+            key = config['CONFIG']['key']
+            pierrick = config['CONFIG']['pierrick']
+            papa = config['CONFIG']['papa']
+            sequence = config['CONFIG']['sequence']
+            specices = config['CONFIG']['specices']
+            web = config['CONFIG']['web']
+            add = config['CONFIG']['add']
+            urlGender = config['CONFIG']['gender']
+            gettrans = config['CONFIG']['gettrans']
 
 
-class BugReport(discord.ui.Modal):
+except IOError as fnf_error:
+    print(fnf_error)
+    sys.exit(-1)
+
+try:
+        genderList = json.loads(requests.get(urlGender).text)
+        print(genderList['list'])
+        optionslist = []
+        for i in genderList['list']:
+            optionslist = optionslist + [app_commands.Choice(name=i,value=i)]
+
+    
+except Exception as e:
+    print("Erreur sur les genres")
+    print(e)
+    sys.exit(-1)
+
+class BugReportModal(discord.ui.Modal):
     def __init__(self):
         super().__init__(title="Bug Report")
 
@@ -46,50 +76,79 @@ class BugReport(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.send_message(f"Thanks for your report {interaction.user}", ephemeral=True)
-        user = await bot.fetch_user(pierrick)
+        user = await client.fetch_user(pierrick)
         await user.send(f"🚨 **Bug report** \n By {interaction.user} \n \n  __Bug's command name__ :  \n  > *{self.name.value}* \n \n   __Bug's description__ : \n > *{self.about.value}* ")
-        user = await bot.fetch_user(papa)
-        await user.send(f"🚨 **Bug report** \n By {interaction.user} \n \n  __Bug's command name__ :  \n  > *{self.name.value}* \n \n   __Bug's description__ : \n  > *{self.about.value}* ") 
-
-
-@bot.tree.command(name="report-a-bug", description="Report a bug")
-async def Test(interaction: discord.Interaction):
-    await interaction.response.send_modal(BugReport()) 
-
-
-
-
-@bot.event
-async def on_ready():
-    logger.info(f"User: {bot.user} (ID: {bot.user.id})")
-    print(f'{bot.user} has connected to Discord!')
-    await bot.tree.sync()
+        user = await client.fetch_user(papa)
+        await user.send(f"🚨 **Bug report** \n By {interaction.user} \n \n  __Bug's command name__ :  \n  > *{self.name.value}* \n \n   __Bug's description__ : \n  > *{self.about.value}* ")
     
 
 
-@bot.tree.command(name="set-gender", description="set the gender for your futur queries")
+class Link(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        button = discord.ui.Button(label="Visit gbot website", style=discord.ButtonStyle.url, url = web )
+        self.add_item(button)
+
+class Gbot(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        button = discord.ui.Button(label="Add gbot", style=discord.ButtonStyle.url, url = add )
+        self.add_item(button)
+     
+
+@client.event
+async def on_ready():
+    await tree.sync()
+    print(f'{client.user} has connected to Discord!')
+    await client.change_presence(activity=discord.Game("/gbot"))
+    
+@tree.command(name="gbot", description="Get list of commands")
+async def gbot(interaction: discord.Interaction):
+    await interaction.response.send_message('`/gbot`: Get list of commands \n`/set-gender` :  \n`/get-translation` : Get proteic sequence of a cds \n`/get-species` : Get sequence list\n`/website`: Get website link ')
+    
+@tree.command(name="get-species", description="Get sequence list")
+async def getspecies(interaction:discord.Interaction):
+    await interaction.response.send_message(requests.get(specices).text)
+
+@tree.command(name="website", description="Get website link")
+async def website(interaction:discord.Interaction):
+    await interaction.response.send_message(view=Link())
+
+@tree.command(name="add-gbot", description="Get link to add gbot to your server")
+async def addgbot(interaction:discord.Interaction):
+    await interaction.response.send_message(view=Gbot())
+
+@tree.command(name="report-a-bug", description="Report a bug")
+async def Test(interaction: discord.Interaction):
+    await interaction.response.send_modal(BugReportModal())
+
+###
+@tree.command(name="choices")
+@app_commands.choices(options = optionslist)
+async def choices(interaction:discord.Interaction,options:app_commands.Choice[str]):
+    await interaction.response.send_message(f"{options.value}. You choose option {options.name}",ephemeral=True)
+###
+
+@tree.command(name="set-gender", description="set the gender for your futur queries")
 async def setGender(interaction: discord.Interaction, gender:str):
     userGender[interaction.user] = gender
     await interaction.response.send_message(f'{interaction.user} set gender to {gender}')
 
-
-@bot.tree.command(name="get_translation", description="Get proteic sequence of a cds in text")
+@tree.command(name="get-translation", description="Get proteic sequence of a cds")
 async def getsequencetxt(interaction: discord.Interaction, cds:str):
-    "Get proteic sequence of a cds in text"
-
+    
     if interaction.user in userGender:
         gender = userGender[interaction.user]
     else:
         gender = 'Plant'
 
-    # set the cookie genger
     cookies = {'gender': gender}    
 
-    urlGetCDS = APIURL+'/Feature/feat/CDS/'+ cds
+    urlGetCDS = gettrans + cds
     jsonStr= requests.get(urlGetCDS, cookies=cookies).text
     data = json.loads(jsonStr)
     if data!=None and 'id' in data[0] : 
-        urlGetTrans = APIURL+'/Feature/product/'+ str(data[0]['id'])
+        urlGetTrans = sequence + str(data[0]['id'])
         seqArray= json.loads(requests.get(urlGetTrans, cookies=cookies).text)
         output = '```>'+cds+'\n'
         for line in seqArray:
@@ -99,142 +158,13 @@ async def getsequencetxt(interaction: discord.Interaction, cds:str):
     else : 
         await interaction.response.send_message('CDS invalide/inexistant !')
 
+'''
+@tree.command(name="upload-test")
+async def upload(interaction:discord.Interaction, fileuser:discord.Attachment):
+    await interaction.response.send_message(file=discord.File(r'/home/pierrick/Bureau/test.png'))
+'''
 
 if __name__ == '__main__':
-    TOKEN = None
-    APIURL= None
-    try:
-        config = configparser.ConfigParser()
-
-        with open("bot.cfg") as f:
-            config.read_file(f)
-
-            if 'SERVER' in config:
-                TOKEN = config['SERVER']['key']
-                APIURL = config['SERVER']['apiURL']
-    except IOError as fnf_error:
-        print(fnf_error)
-        sys.exit(-1)
-
-    # Recuperation des gender pour la suite des requetes
-    urlGender = APIURL+'/Gender'
-    try:
-        genderList = json.loads(requests.get(urlGender).text)
-        print(genderList['list'])
-    except Exception as e:
-        print("Erreur sur les genres")
-        print(e)
-        sys.exit(-1)
-
-
-    bot.run(TOKEN, root_logger=True)
-
-
-
-
-
-
-# import discord
-# from discord.ext import commands
-# import requests
-# import json
-# import configparser
-# import sys
-
-# intents = discord.Intents.all() 
-# client = discord.Client(intents=intents)
-# tree = discord.app_commands.CommandTree(client)
-
-# genderList = None
-
-# @client.event
-# async def on_ready():
-#     print(f'{client.user} is connected to the following server:\n')
-#     for server in client.guilds:
-#         print(f'{server.name}(id: {server.id})')
-    
-#     await tree.sync()
-#     await client.change_presence(activity=discord.Game("/gbot"))
-
-# class Link(discord.ui.View):
-#     def __init__(self):
-#         super().__init__(timeout=None)
-#         button = discord.ui.Button(label="Visit gbot website", style=discord.ButtonStyle.url, url = 'http://stat.genopole.cnrs.fr/server/GBOT/index.html')
-#         self.add_item(button)
-
-# class Gbot(discord.ui.View):
-#     def __init__(self):
-#         super().__init__(timeout=None)
-#         button = discord.ui.Button(label="Add gbot", style=discord.ButtonStyle.url, url = 'https://discord.com/oauth2/authorize?client_id=1251220532737871883')
-#         self.add_item(button)
- 
-
-
-
-
-# @tree.command(name="get-sequence-in-json", description="Get proteic sequence of a cds in json")
-# async def getsequencejson(interaction: discord.Interaction, cds:str):
-#     link = requests.get('http://stat.genopole.cnrs.fr/server/Api/Feature/product/' + cds).text
-#     if not str(link) == 'null':
-#         data = '```' + link + '```'
-#         await interaction.response.send_message(data)
-#     else:
-#         await interaction.response.send_message('CDS invalide/inexistant !')
-
-
-
-
-# @tree.command(name="gbot", description="Get list of commands")
-# async def gbot(interaction: discord.Interaction):
-#     await interaction.response.send_message('`/gbot`: Get list of commands \n`/get-sequence-in-txt` : Get proteic sequence of a cds in text \n`/get-sequence-in-json` : Get proteic sequence of a cds in json \n`/get-species` : Get sequence list\n`/website`: Get website link ')
-    
-# @tree.command(name="get-species", description="Get sequence list")
-# async def getspecies(interaction:discord.Interaction):
-#     await interaction.response.send_message(requests.get('http://stat.genopole.cnrs.fr/server/Api/Species/').text)
-
-# @tree.command(name="upload-test")
-# async def upload(interaction:discord.Interaction, fileuser:discord.Attachment):
-#     await interaction.response.send_message(file=discord.File(r'/home/pierrick/Bureau/test.png'))
-
-
-
-
-
-# @tree.command(name="website", description="Get website link")
-# async def website(interaction:discord.Interaction):
-#     await interaction.response.send_message(view=Link())
-
-# @tree.command(name="add-gbot", description="Get link to add gbot to your server")
-# async def addgbot(interaction:discord.Interaction):
-#     await interaction.response.send_message(view=Gbot())
-
-
-
-
-
-# if __name__ == '__main__':
-#     key = None
-#     try:
-#         config = configparser.ConfigParser()
-
-#         with open("bot.cfg") as f:
-#             config.read_file(f)
-
-#             if 'SERVER' in config:
-#                 key = config['SERVER']['key']
-            
-#     except IOError as fnf_error:
-#         print(fnf_error)
-#         sys.exit(-1)
-
-#     # Recuperation des gender pour la suite des requetes
-#     url = 'http://stat.genopole.cnrs.fr/server/Api/Gender'
-#     try:
-#         genderList = json.loads(requests.get(url).text)
-#         print(genderList['list'])
-#     except :
-#         print("Erreur sur les genres")
-#         sys.exit(-1)
-
-
-#     client.run(key)
+       
+    print(tree.get_commands())
+    client.run(key, root_logger=True)

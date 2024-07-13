@@ -47,6 +47,11 @@ except IOError as fnf_error:
 try:
         genderList = json.loads(requests.get(urlGender).text)
         print(genderList['list'])
+        optionslist = []
+        for i in genderList['list']:
+            optionslist = optionslist + [app_commands.Choice(name=i,value=i)]
+
+    
 except Exception as e:
     print("Erreur sur les genres")
     print(e)
@@ -119,10 +124,7 @@ async def Test(interaction: discord.Interaction):
 
 ###
 @tree.command(name="choices")
-@app_commands.choices(options = [
-    app_commands.Choice(name=genderList['list'][0],value="This is a"),
-    app_commands.Choice(name=genderList['list'][1],value="This is b")
-])
+@app_commands.choices(options = optionslist)
 async def choices(interaction:discord.Interaction,options:app_commands.Choice[str]):
     await interaction.response.send_message(f"{options.value}. You choose option {options.name}",ephemeral=True)
 ###
@@ -164,7 +166,5 @@ async def upload(interaction:discord.Interaction, fileuser:discord.Attachment):
 
 if __name__ == '__main__':
        
-    
-
     print(tree.get_commands())
     client.run(key, root_logger=True)
