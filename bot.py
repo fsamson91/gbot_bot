@@ -122,17 +122,11 @@ async def addgbot(interaction:discord.Interaction):
 async def Test(interaction: discord.Interaction):
     await interaction.response.send_modal(BugReportModal())
 
-###
-@tree.command(name="choices")
-@app_commands.choices(options = optionslist)
-async def choices(interaction:discord.Interaction,options:app_commands.Choice[str]):
-    await interaction.response.send_message(f"{options.value}. You choose option {options.name}",ephemeral=True)
-###
-
 @tree.command(name="set-gender", description="set the gender for your futur queries")
-async def setGender(interaction: discord.Interaction, gender:str):
-    userGender[interaction.user] = gender
-    await interaction.response.send_message(f'{interaction.user} set gender to {gender}')
+@app_commands.choices(options = optionslist)
+async def setGender(interaction:discord.Interaction,options:app_commands.Choice[str]):
+    userGender[interaction.user] = options.value
+    await interaction.response.send_message(f'{interaction.user} set gender to {options.value}')
 
 @tree.command(name="get-translation", description="Get proteic sequence of a cds")
 async def getsequencetxt(interaction: discord.Interaction, cds:str):
