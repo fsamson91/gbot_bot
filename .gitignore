@@ -2,5 +2,5 @@
 bot_env/*
 logs/*
 *.pyc
-env/*
+officiel/env/*
 bot.png
