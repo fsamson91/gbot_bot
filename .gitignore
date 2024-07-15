@@ -1,5 +1,5 @@
 *cfg
-logs/*
+logs*
 *.pyc
 officiel/env/*
 bot.png
