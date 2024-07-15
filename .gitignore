@@ -1,7 +1,7 @@
 *cfg
-env/*
 logs/*
 *.pyc
 officiel/env/*
 bot.png
 bot_env*
+env*
