@@ -46,11 +46,12 @@ except IOError as fnf_error:
 
 try:
         genderList = json.loads(requests.get(urlGender).text)
-        print(genderList['list'])
         optionslist = []
-        for i in genderList['list']:
+        optionname = []
+        for y in genderList['list']:
+            optionname = optionname + [y['gendername']]
+        for i in optionname:
             optionslist = optionslist + [app_commands.Choice(name=i,value=i)]
-
     
 except Exception as e:
     print("Erreur sur les genres")
@@ -159,6 +160,4 @@ async def upload(interaction:discord.Interaction, fileuser:discord.Attachment):
 '''
 
 if __name__ == '__main__':
-       
-    print(tree.get_commands())
     client.run(key, root_logger=True)
