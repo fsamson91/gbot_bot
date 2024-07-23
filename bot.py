@@ -41,7 +41,7 @@ try:
             pierrick = config['CONFIG']['pierrick']
             papa = config['CONFIG']['papa']
             sequence = config['CONFIG']['sequence']
-            specices = config['CONFIG']['specices']
+            species = config['CONFIG']['species']
             web = config['CONFIG']['web']
             add = config['CONFIG']['add']
             urlGender = config['CONFIG']['gender']
@@ -115,9 +115,9 @@ async def on_ready():
 async def gbot(interaction: discord.Interaction):
     await interaction.response.send_message('`/gbot`: Get list of commands \n`/set-gender` :  \n`/get-translation` : Get proteic sequence of a cds \n`/get-species` : Get sequence list\n`/website`: Get website link ')
     
-@tree.command(name="get-species", description="Get sequence list")
-async def getspecies(interaction:discord.Interaction):
-    await interaction.response.send_message(requests.get(specices).text)
+# @tree.command(name="get-species", description="Get sequence list")
+# async def getspecies(interaction:discord.Interaction):
+#     await interaction.response.send_message(requests.get(specices).text)
 
 @tree.command(name="website", description="Get website link")
 async def website(interaction:discord.Interaction):
@@ -156,6 +156,25 @@ async def getsequencetxt(interaction: discord.Interaction, cds:str):
         await interaction.response.send_message(output)
     else : 
         await interaction.response.send_message('CDS invalide/inexistant !')
+
+
+@tree.command(name="get-species", description="Get species list for current gender")
+async def getspecies(interaction: discord.Interaction):
+    gender = checkgender(interaction.user)
+   
+    cookies = {'gender': gender}    
+
+    jsonStr= requests.get(species, cookies=cookies).text
+    data = json.loads(jsonStr)
+    if data!=None and 'id' in data[0] : 
+        output = f'{interaction.user} connected on {gender}\n```'
+        for d in data:
+            output += d['name']+'\n'
+        output+= '```'
+        await interaction.response.send_message(output)
+    else : 
+        await interaction.response.send_message('Species invalide/inexistant !')
+
 
 '''
 @tree.command(name="upload-test")
