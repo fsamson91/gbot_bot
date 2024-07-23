@@ -7,11 +7,19 @@ import sys
 
 from discord import app_commands
 
+userGender = {}
+
+def checkgender(user):
+    if user in userGender:
+        return userGender[user]
+    else:
+        return 'Plant'
+
+
 intents = discord.Intents.all() 
 client = discord.Client(intents=intents)
 tree = discord.app_commands.CommandTree(client)
 
-userGender = {}
 
 key = None
 pierrick = None
@@ -131,12 +139,8 @@ async def setGender(interaction:discord.Interaction,options:app_commands.Choice[
 
 @tree.command(name="get-translation", description="Get proteic sequence of a cds")
 async def getsequencetxt(interaction: discord.Interaction, cds:str):
-    
-    if interaction.user in userGender:
-        gender = userGender[interaction.user]
-    else:
-        gender = 'Plant'
-
+    gender = checkgender(interaction.user)
+   
     cookies = {'gender': gender}    
 
     urlGetCDS = gettrans + cds
@@ -145,7 +149,7 @@ async def getsequencetxt(interaction: discord.Interaction, cds:str):
     if data!=None and 'id' in data[0] : 
         urlGetTrans = sequence + str(data[0]['id'])
         seqArray= json.loads(requests.get(urlGetTrans, cookies=cookies).text)
-        output = '```>'+cds+'\n'
+        output = f'{interaction.user} connected on {gender}\n```>{cds}\n'
         for line in seqArray:
             output+=f'{line}\n'
         output+='```'
