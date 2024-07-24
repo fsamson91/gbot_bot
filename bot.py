@@ -6,6 +6,8 @@ import configparser
 import sys
 
 from discord import app_commands
+from typing import Literal
+from typing import List
 
 userGender = {}
 
@@ -40,6 +42,7 @@ try:
             key = config['CONFIG']['key']
             pierrick = config['CONFIG']['pierrick']
             papa = config['CONFIG']['papa']
+            api = config['CONFIG']['api']
             sequence = config['CONFIG']['sequence']
             species = config['CONFIG']['species']
             web = config['CONFIG']['web']
@@ -52,19 +55,7 @@ except IOError as fnf_error:
     print(fnf_error)
     sys.exit(-1)
 
-try:
-        genderList = json.loads(requests.get(urlGender).text)
-        optionslist = []
-        optionname = []
-        for y in genderList['list']:
-            optionname = optionname + [y['gendername']]
-        for i in optionname:
-            optionslist = optionslist + [app_commands.Choice(name=i,value=i)]
-    
-except Exception as e:
-    print("Erreur sur les genres")
-    print(e)
-    sys.exit(-1)
+
 
 class BugReportModal(discord.ui.Modal):
     def __init__(self):
@@ -114,11 +105,7 @@ async def on_ready():
 @tree.command(name="gbot", description="Get list of commands")
 async def gbot(interaction: discord.Interaction):
     await interaction.response.send_message('`/gbot`: Get list of commands \n`/set-gender` :  \n`/get-translation` : Get proteic sequence of a cds \n`/get-species` : Get sequence list\n`/website`: Get website link ')
-    
-# @tree.command(name="get-species", description="Get sequence list")
-# async def getspecies(interaction:discord.Interaction):
-#     await interaction.response.send_message(requests.get(specices).text)
-
+ 
 @tree.command(name="website", description="Get website link")
 async def website(interaction:discord.Interaction):
     await interaction.response.send_message(view=Link())
@@ -131,11 +118,17 @@ async def addgbot(interaction:discord.Interaction):
 async def Test(interaction: discord.Interaction):
     await interaction.response.send_modal(BugReportModal())
 
+
+async def gender_autocomplete(interaction: discord.Interaction,current: str,) -> List[app_commands.Choice[str]]:
+    data = json.loads(requests.get(urlGender).text)
+    genderList = [ d['gendername'] for d in data['list'] ]
+    return [ app_commands.Choice(name=gender, value=gender) for gender in genderList if current.lower() in gender.lower() ]
+
 @tree.command(name="set-gender", description="set the gender for your futur queries")
-@app_commands.choices(options = optionslist)
-async def setGender(interaction:discord.Interaction,options:app_commands.Choice[str]):
-    userGender[interaction.user] = options.value
-    await interaction.response.send_message(f'{interaction.user} set gender to {options.value}')
+@app_commands.autocomplete(gender=gender_autocomplete)
+async def setGender(interaction:discord.Interaction, gender: str):
+    userGender[interaction.user] = gender
+    await interaction.response.send_message(f'{interaction.user} set gender to {gender}')
 
 @tree.command(name="get-translation", description="Get proteic sequence of a cds")
 async def getsequencetxt(interaction: discord.Interaction, cds:str):
@@ -158,14 +151,19 @@ async def getsequencetxt(interaction: discord.Interaction, cds:str):
         await interaction.response.send_message('CDS invalide/inexistant !')
 
 
-@tree.command(name="get-species", description="Get species list for current gender")
-async def getspecies(interaction: discord.Interaction):
+def getSpeciesListAsJson(interaction: discord.Interaction) -> str:
     gender = checkgender(interaction.user)
    
     cookies = {'gender': gender}    
 
     jsonStr= requests.get(species, cookies=cookies).text
     data = json.loads(jsonStr)
+    return data
+
+
+@tree.command(name="get-species", description="Get species list for current gender")
+async def getspecies(interaction: discord.Interaction):
+    data = getSpeciesListAsJson()
     if data!=None and 'id' in data[0] : 
         output = f'{interaction.user} connected on {gender}\n```'
         for d in data:
@@ -174,6 +172,32 @@ async def getspecies(interaction: discord.Interaction):
         await interaction.response.send_message(output)
     else : 
         await interaction.response.send_message('Species invalide/inexistant !')
+
+
+async def species_autocomplete(interaction: discord.Interaction,current: str,) -> List[app_commands.Choice[str]]:
+    data = getSpeciesListAsJson(interaction)
+    return [ app_commands.Choice(name=spe['name'], value=str(spe['id'])+'|'+str(spe['name'])) for spe in data if current.lower() in spe['name'].lower() ]
+
+@tree.command(name="get-sequences", description="Get sequence list for a species")
+@app_commands.autocomplete(species=species_autocomplete)
+async def getsequences(interaction: discord.Interaction, species: str):
+    gender = checkgender(interaction.user)
+   
+    cookies = {'gender': gender} 
+
+    (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
+    jsonStr= requests.get(api+'/Chromosome/'+speciesId, cookies=cookies).text
+    data = json.loads(jsonStr)
+    if data!=None and 'id' in data[0] : 
+        output = f'{interaction.user} connected on {gender}\n```'
+        for d in data:
+            output += d['name']+'\t'+str(d['length'])+"bp\n"
+        output+= '```'
+        await interaction.response.send_message(output)
+    else : 
+        await interaction.response.send_message('Species invalide/inexistant !')
+
+   # await interaction.response.send_message(f'{speciesName} probleme !')
 
 
 '''
