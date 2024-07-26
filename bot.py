@@ -4,6 +4,7 @@ import requests
 import json
 import configparser
 import sys
+import os
 
 from discord import app_commands
 from typing import Literal
@@ -200,11 +201,61 @@ async def getsequences(interaction: discord.Interaction, species: str):
    # await interaction.response.send_message(f'{speciesName} probleme !')
 
 
-'''
-@tree.command(name="upload-test")
-async def upload(interaction:discord.Interaction, fileuser:discord.Attachment):
-    await interaction.response.send_message(file=discord.File(r'/home/pierrick/Bureau/test.png'))
-'''
+
+@tree.command(name="blast")
+@app_commands.autocomplete(species=species_autocomplete)
+async def blast(interaction:discord.Interaction, 
+                 fileuser:discord.Attachment,
+                 program: Literal['blastp', 'blastn', 'blastx', 'tblastn'],
+                 species:str
+                 ):
+    print(fileuser)
+    (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
+    if not os.path.isdir('user'):
+        os.makedirs('user')
+    await fileuser.save(os.path.join('user',fileuser.filename))
+    sequence = ""
+    file = open(os.path.join('user', fileuser.filename))
+    file.readline()
+    for line in file:
+        line = line.rstrip()
+        sequence+=line
+    file.close()
+
+    gender = checkgender(interaction.user)
+
+    cookies = {'gender': gender} 
+    headers = {'content-type': 'application/json'}
+    parameter = {'program': program, 
+                 'evalue': '1e-5',
+                 'wordsize': 5,
+                 'txt': 1,
+                 'sequence': sequence,
+                 'speciesId': speciesId,
+                 'speciesName' : speciesName,
+                 'gender': 'Plant'
+                 }
+    await interaction.response.defer()
+    
+    response = requests.post("http://192.168.0.156:8088/my_pref/Api/server"+"/Blast/",data=json.dumps(parameter),headers = headers, cookies=cookies)
+    
+    with open(os.path.join('user', fileuser.filename+"_result"), "wb") as file:
+        file.write(response.content)
+    file.close()
+
+    entityFileName = fileuser.filename+"_result"
+
+    # Send embed notifying start of the spam stream
+    detailsEmbed = discord.Embed(
+        colour=discord.Colour.red(),
+        title=f"See `{entityFileName}` for your blast result",
+        description="Due to discord character limits regarding embeds, the results have to be sent in a file"
+    )
+    await interaction.followup.send(embed=detailsEmbed, file=discord.File(os.path.join('user', fileuser.filename+"_result")))
+
 
 if __name__ == '__main__':
     client.run(key, root_logger=True)
+
+
+
