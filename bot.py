@@ -209,7 +209,6 @@ async def blast(interaction:discord.Interaction,
                  program: Literal['blastp', 'blastn', 'blastx', 'tblastn'],
                  species:str
                  ):
-    print(fileuser)
     (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
     if not os.path.isdir('user'):
         os.makedirs('user')
@@ -253,6 +252,60 @@ async def blast(interaction:discord.Interaction,
     )
     await interaction.followup.send(embed=detailsEmbed, file=discord.File(os.path.join('user', fileuser.filename+"_result")))
 
+
+@tree.command(name="graph-sequence")
+async def graphit(interaction:discord.Interaction, 
+                 fileuser:discord.Attachment,
+                 ):
+    # Get File on server
+    if not os.path.isdir('user'):
+        os.makedirs('user')
+    await fileuser.save(os.path.join('user',fileuser.filename))
+    sequence = ""
+    file = open(os.path.join('user', fileuser.filename))
+    file.readline()
+    for line in file:
+        line = line.rstrip()
+        sequence+=line
+    file.close()
+
+    gender = checkgender(interaction.user)
+    
+    # uid a 0 pour dire que c'est un nouvel update
+    cookies = {'gender': gender} 
+    parameter = { 'uid' : 0 }
+    # Call discord to wait 
+    await interaction.response.defer()
+
+    files = {'dataFile': open(os.path.join('user', fileuser.filename), 'rb')}
+
+    response = requests.post("http://192.168.0.156:8088/my_pref/Api/server/uploadForBot/",
+        cookies=cookies,
+        files=files)
+    
+    retour = json.loads(response.text)
+
+
+    if retour['status'] != 1 :
+        await interaction.followup.send("Problem with your sequence")
+
+    uid = retour['uid']
+
+    from selenium import webdriver
+    from selenium.webdriver.chrome.service import Service
+
+    from selenium.webdriver.support.ui import WebDriverWait
+    service = Service()
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless=new")
+    driver = webdriver.Chrome(service=service, options=options)
+
+    driver.get("http://192.168.0.156:8088/my_pref/GBOT/graphsequence.html?uid="+uid)
+    html_page = driver.page_source
+    driver.save_screenshot(os.path.join('user','screenshot.png'))
+# effacer le contenu de la base de donnee... 
+
+    await interaction.followup.send(file=discord.File(os.path.join('user','screenshot.png')))
 
 if __name__ == '__main__':
     client.run(key, root_logger=True)
