@@ -7,8 +7,7 @@ import sys
 import os
 
 from discord import app_commands
-from typing import Literal
-from typing import List
+from typing import List, Literal, Optional
 
 userGender = {}
 
@@ -256,6 +255,8 @@ async def blast(interaction:discord.Interaction,
 @tree.command(name="graph-sequence")
 async def graphit(interaction:discord.Interaction, 
                  fileuser:discord.Attachment,
+                 start: Optional[int] = 0,
+                 stop: Optional[int] = -1
                  ):
     # Get File on server
     if not os.path.isdir('user'):
@@ -269,6 +270,7 @@ async def graphit(interaction:discord.Interaction,
         sequence+=line
     file.close()
 
+
     gender = checkgender(interaction.user)
     
     # uid a 0 pour dire que c'est un nouvel update
@@ -276,7 +278,7 @@ async def graphit(interaction:discord.Interaction,
     parameter = { 'uid' : 0 }
     # Call discord to wait 
     await interaction.response.defer()
-
+# Definir la taille de l'image dans l'url! en post... avec les feature a afficher par exemple
     files = {'dataFile': open(os.path.join('user', fileuser.filename), 'rb')}
 
     response = requests.post("http://192.168.0.156:8088/my_pref/Api/server/uploadForBot/",
@@ -300,12 +302,21 @@ async def graphit(interaction:discord.Interaction,
     options.add_argument("--headless=new")
     driver = webdriver.Chrome(service=service, options=options)
 
-    driver.get("http://192.168.0.156:8088/my_pref/GBOT/graphsequence.html?uid="+uid)
+    driver.get("http://192.168.0.156:8088/my_pref/GBOT/graphsequence.html?uid="+uid+"&start="+str(start)+"&stop="+str(stop))
     html_page = driver.page_source
     driver.save_screenshot(os.path.join('user','screenshot.png'))
 # effacer le contenu de la base de donnee... 
 
+    # eff
     await interaction.followup.send(file=discord.File(os.path.join('user','screenshot.png')))
+    # Effacer le contenu de la base de donnee. 
+    headers = {'content-type': 'application/json'}
+
+    response = requests.post("http://192.168.0.156:8088/my_pref/Api/server/cleanBot/",
+        data=json.dumps({'uid': uid }) ,headers = headers, cookies=cookies
+       )
+
+
 
 if __name__ == '__main__':
     client.run(key, root_logger=True)
