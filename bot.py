@@ -370,15 +370,492 @@ async def graphsequence(interaction:discord.Interaction,
         "&start="+str(start)+
         "&stop="+str(stop))
     html_page = driver.page_source
-    # Creation du screenshoot
-    driver.save_screenshot(os.path.join('user','screenshot.png'))
 
     # backup de l'image et envoie de celle ci
     if not os.path.isdir('user'):
         os.makedirs('user')
 
+    # Creation du screenshoot
+    driver.save_screenshot(os.path.join('user','screenshot.png'))
+
+    
     await interaction.followup.send(file=discord.File(os.path.join('user','screenshot.png')))
     
+
+
+
+
+'''
+    Fonction de recuperation d'un svg a partir d'un bout de sequence 
+    de la base de donnees
+    parametre : species espece,
+                sequence (autocompletion comme espece)
+                start position de debut
+                stop position de fin
+'''
+@tree.command(name="graph-sequence-svg")
+@app_commands.autocomplete(species=sequence_autocomplete, sequence=sequence_autocomplete)
+async def graphsequenceassvg(interaction:discord.Interaction, 
+                    species:str,
+                    sequence:str,
+                 start: int,
+                 stop: int
+                 ):
+    # Recuperation du genre
+    gender = checkgender(interaction.user)
+
+    # Initialisation du cookies utilisé par GBOT
+    cookies = {'gender': gender} 
+    # Call discord to wait 
+    await interaction.response.defer()
+
+    # Recuperation des parametres venant de l'autocompletion    
+    (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
+    (sequenceId, sequenceName) = sequence.split('|') # regarder la value de l'autocompletion
+
+    # Utilisation de la librairie permettant de simuler un navigateur web
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+
+    from selenium.webdriver.chrome.service import Service
+
+    from selenium.webdriver.support.ui import WebDriverWait
+    service = Service()
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless=new")
+    driver = webdriver.Chrome(service=service, options=options)
+    driver.set_window_size(1000, 250) 
+
+    # Appel de l'url correspondante pour generer l'image
+    driver.get("http://192.168.0.156:8088/my_pref/GBOT/graphsequence.html?uid="+gender+
+        "&species="+speciesId+
+        "&sequence="+sequenceId+
+        "&start="+str(start)+
+        "&stop="+str(stop))
+    html_page = driver.page_source
+
+    import re
+    exp = re.search('<svg.+?(</svg>)',html_page)
+    svg = exp.group(0)
+    print(svg)
+    
+     # backup de l'image et envoie de celle ci
+    if not os.path.isdir('user'):
+        os.makedirs('user')
+
+ 
+
+    svg = svg.replace("><", ">\n"+
+    """
+<style>
+.axis text {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 1em;
+}
+
+.axis line {
+  shape-rendering: crispEdges;
+  opacity: 0.2;
+  stroke-width: 1px;
+}
+
+.axis .minor line {
+  stroke: red;
+  stroke-width: 1px;
+  opacity: 0.1;
+  stroke-dasharray: 6,4;
+}
+
+
+g.Motif g.highlight {
+  stroke : red;
+  stroke-width: 5px;
+  fill: white;
+  z-index: 10;
+}
+
+
+g.highlight {
+  stroke : red;
+  fill: red;
+  stroke-width: 3px;
+  z-index: 10;
+}
+
+
+.gap {
+  stroke: #818181;
+  fill: #818181;
+}
+
+.PFAM {
+  stroke: #64191e;
+  fill: black;
+}
+
+.est_cdna {
+  stroke: #bc09bc;
+  fill: #bc09bc;
+}
+
+.SeqFeature {
+  stroke: #bc09bc;
+  fill: hsl(63, 100%, 50%);
+}
+
+.tRNA,
+.miRNA,
+.otherRNA,
+.npcRNA,
+.ncRNA,
+.snRNA,
+.rRNA,
+.snoRNA {
+  stroke: #000000;
+  fill: #ff4a2d;
+}
+
+.MIR{
+  stroke: #000000;
+  fill: #ffff00;
+}
+
+
+.CDS {
+  stroke: #0000ff;
+  fill: #0000ff;
+}
+
+.CDSDensity {
+  stroke: #0000ff;
+}
+
+
+.Blast {
+  stroke: #f9735a;
+  fill: #eb4f0a;
+}
+
+
+.CDS .no{
+  background-color: #0000ff;
+  color: white;
+  stroke: #0000ff;
+  fill: #0000ff;
+  font-size: 11pt;
+
+}
+
+.CDS .nucleus{
+  background-color: #ffff00;
+  color: black;
+  stroke: #ffff00;
+  fill: #ffff00;
+  font-size: 11pt;
+
+}
+
+.CDS .plastid{
+  background-color: #00ff00;;
+  color: black;
+  stroke: #00ff00;
+  fill: #00ff00;
+  font-size: 11pt;
+
+}
+
+.CDS .endo_reticulum {
+  background-color: black;
+  color: white;
+  stroke: black;
+  fill: black;
+  font-size: 11pt;
+
+}
+
+.CDS .mitochondria {
+  background-color: red;
+  color: black;
+  stroke: red;
+  fill: red;
+  font-size: 11pt;
+
+}
+
+.FST,
+.SNP {
+  stroke: black;
+  fill: #ff0000;
+}
+
+.mRNA {
+  stroke: #3bd1e1;
+  fill: #3bd1e1;
+}
+
+
+.mobile_element {
+  stroke: none;
+  fill: #c5c5c5 ;
+}
+
+.repeat_region,
+.Repeat_Element {
+  stroke: white;
+  fill: #949494 ;
+}
+
+.TE  {
+  stroke: rgb(255, 153, 36);
+  fill: #ffd6a0 ;
+}
+
+
+.MPSS_smallRNA {
+  stroke: black;
+  fill: #57f700 ;
+}
+
+.MPSS {
+  stroke: black;
+  fill: #00d5e4 ;
+}
+
+.AFFYMETRIX {
+  stroke: #ff4851;
+  fill: #ff4851 ;
+}
+
+
+.Repeat_TAIR {
+  stroke: #949494 ;
+  fill: #949494 ;
+}
+
+
+.CDS_Eugene {
+  stroke: black;
+  fill: #9800d0;
+}
+
+.CDS_Jigsaw {
+  stroke: black;
+  fill: #b1f0d3;
+}
+
+.LTR{
+  stroke: #5f84e9;
+  fill: #5f7fe9;
+}
+
+
+.PPR_CDS {
+  stroke: black;
+  fill: #e2a812;
+}
+
+.PPR_motif {
+  stroke: black;
+  fill: #e2a812;
+}
+
+.PPR_motif .S{
+  stroke: #e9e05f;
+  fill: #e9e05f;
+}
+
+.PPR_motif .P{
+  stroke: #e2a812;
+  fill: #e2a812;
+}
+
+.PPR_motif .L{
+  stroke: #ca7f1e;
+  fill: #ca7f1e;
+}
+
+.PPR_motif .E{
+  stroke: #68ba2a;
+  fill: #68ba2a;
+}
+
+.PPR_motif .eplus{
+  stroke: #5f965e;
+  fill: #5f965e;
+}
+
+.multi {
+  stroke: black;
+}
+
+.SMAR{
+  stroke: #b67d3e;
+  fill: #b67d3e;
+}
+
+.CDS_GeneFarm {
+  stroke: black;
+  fill: #008300;
+}
+
+.CDS_Alternative {
+  stroke: black;
+  fill: #000eff;
+}
+
+.mRNA_Alternative {
+  stroke: black;
+  fill: #33d3e4;
+}
+
+
+.GST {
+  stroke: #af26fb;
+  fill: #af26fb;
+}
+
+.MIRSPOT {
+  stroke: #df76fe;
+  fill: #df76fe;
+}
+
+.ChromoChip {
+  stroke: #ffa713;
+  fill: #ffa713;
+}
+
+
+.SNP_probe {
+  stroke: #ffa713;
+  fill: #ffa713;
+}
+
+.CATMA_v6 {
+  stroke: #c100b3;
+  fill: #c100b3;
+}
+
+.TPS,
+.CHS,
+.RGA,
+.STS {
+  stroke: black;
+  fill: #008300;
+}
+
+.NimbleGen,
+.NimbleGen_v1, 
+.Agilent_v1 {
+  stroke: #ebc100;
+  fill: #ebc100;
+}
+
+
+.RseqContig_Flowers{
+  stroke: #ebc100;
+  fill: rgb(97, 80, 2);
+}
+
+.RseqContig_MixOrgans{
+  stroke: #524817;
+  fill: rgb(215, 201, 141);
+}
+
+.notextfeat {
+    stroke: none;
+    fill: none;
+    color: none;
+    display: none;
+}
+.txtfeat {
+  font-family: 'open sans',arial,sans-serif;
+  text-anchor: middle;
+  stroke: none;
+  font-size: 9px;
+}
+
+
+rect.cadre {
+  fill: rgb(252,252,242);
+  stroke: lightblue;
+}
+
+path.domain {
+    stroke: white;
+}
+.A{
+  fill: green;
+  stroke: green;
+  stroke-linecap: round;
+  stroke-width: 4;
+
+}
+.G{
+  stroke: orange;
+  stroke-linecap: round;
+  stroke-width: 4;
+  fill: white;
+
+}
+.C{
+  stroke: blue;
+  stroke-linecap: round;
+  stroke-width: 4;
+  fill: white;
+}
+.T{
+  fill: red;
+  stroke: red;
+  stroke-linecap: round;
+  stroke-width: 4;
+
+}
+.Aa{
+  fill: none;
+  stroke: green;
+  stroke-linecap: round;
+}
+
+.Ga{
+  stroke: #e19c18;
+  stroke-linecap: round;
+  fill: none;
+
+}
+.Ca{
+  stroke: blue;
+  stroke-linecap: round;
+  fill: none;
+}
+.Ta{
+  fill: red;
+  stroke: red;
+  stroke-linecap: round;
+}
+
+
+
+</style>
+"""+"<",1)
+
+    svg = svg.replace("currentColor", "black")
+
+     # Recuperation du fichier de resultat
+    with open(os.path.join('user', "result.svg"), "w") as file:
+        file.write(str(svg))
+    file.close()
+    # et les include dans le svg apres la balise svg.
+    entityFileName = "result.svg"
+
+    # Send embed notifying start of the spam stream
+    detailsEmbed = discord.Embed(
+        colour=discord.Colour.red(),
+        title=f"See `{entityFileName}` for your svg result",
+        description="Due to discord character limits regarding embeds, the results have to be sent in a file"
+    )
+    await interaction.followup.send(embed=detailsEmbed, file=discord.File(os.path.join('user', "result.svg")))
+
+
 
 
 '''
