@@ -12,18 +12,24 @@ from typing import List, Literal, Optional
 userGender = {}
 
 def checkgender(user):
-    if user in userGender:
-        return userGender[user]
-    else:
-        return 'Plant'
+  """ Fonction de verification du genre pour un utilisateur
+      cela permet d'acceder aux plantes et aux mouches
+      @param user : nom du user connecté. 
+      @return : par defaut Plant sinon le genre de l'utilisateur
+  """
+  if user in userGender:
+    return userGender[user]
+  else:
+    return 'Plant'
 
 
+# Objects de discord
 intents = discord.Intents.all() 
 client = discord.Client(intents=intents)
 tree = discord.app_commands.CommandTree(client)
 
 
-key = None
+key = None         # Cle du serveur bot
 pierrick = None
 papa = None
 sequence = None
@@ -32,8 +38,12 @@ web = None
 add = None
 urlGender = None
 gettrans = None
+api = None  # URL de L'API de gbot
 
+
+# Lecture des variables du fichier de configuration
 try:
+  
     config = configparser.ConfigParser()
     with open("bot.cfg") as f:
         config.read_file(f)
@@ -56,7 +66,8 @@ except IOError as fnf_error:
     sys.exit(-1)
 
 
-
+# Objet pour referencer un bug dans l'application 
+# avec envoi de message aux developpeurs.
 class BugReportModal(discord.ui.Modal):
     def __init__(self):
         super().__init__(title="Bug Report")
@@ -83,12 +94,16 @@ class BugReportModal(discord.ui.Modal):
     
 
 
+
+# Lien gbot
 class Link(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         button = discord.ui.Button(label="Visit gbot website", style=discord.ButtonStyle.url, url = web )
         self.add_item(button)
 
+
+# Add gbot ?
 class Gbot(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -96,24 +111,38 @@ class Gbot(discord.ui.View):
         self.add_item(button)
      
 
+# Message d'invite quand l'on se connecte au bot
 @client.event
 async def on_ready():
     await tree.sync()
     print(f'{client.user} has connected to Discord!')
     await client.change_presence(activity=discord.Game("/gbot"))
     
+
+@tree.command(name="help", description="Returns all commands available")
+async def help(ctx):
+    helptext = "```"
+    for command in self.bot.commands:
+        helptext+=f"{command}\n"
+    helptext+="```"
+    await ctx.send(helptext) 
+  
+# Affiche la liste des commandes du bot
 @tree.command(name="gbot", description="Get list of commands")
 async def gbot(interaction: discord.Interaction):
     await interaction.response.send_message('`/gbot`: Get list of commands \n`/set-gender` :  \n`/get-translation` : Get proteic sequence of a cds \n`/get-species` : Get sequence list\n`/website`: Get website link ')
  
+# Donne l'adresse du site web de gbot
 @tree.command(name="website", description="Get website link")
 async def website(interaction:discord.Interaction):
     await interaction.response.send_message(view=Link())
 
+# Permet d'ajouter ce bot a un autre serveur bot
 @tree.command(name="add-gbot", description="Get link to add gbot to your server")
 async def addgbot(interaction:discord.Interaction):
     await interaction.response.send_message(view=Gbot())
 
+# Ajouter un rapport de bug
 @tree.command(name="report-a-bug", description="Report a bug")
 async def Test(interaction: discord.Interaction):
     await interaction.response.send_modal(BugReportModal())
@@ -287,7 +316,7 @@ async def blast(interaction:discord.Interaction,
     # Mettre en attente discord
     await interaction.response.defer()
     # Requete blast
-    response = requests.post("http://192.168.0.156:8088/my_pref/Api/server"+"/Blast/",data=json.dumps(parameter),headers = headers, cookies=cookies)
+    response = requests.post("http://192.168.216.97:8088/my_pref/Api/server"+"/Blast/",data=json.dumps(parameter),headers = headers, cookies=cookies)
     
     # Recuperation du fichier de resultat
     with open(os.path.join('user', fileuser.filename+"_result"), "wb") as file:
@@ -364,7 +393,7 @@ async def graphsequence(interaction:discord.Interaction,
     driver.set_window_size(1000, 250) 
 
     # Appel de l'url correspondante pour generer l'image
-    driver.get("http://192.168.0.156:8088/my_pref/GBOT/graphsequence.html?uid="+gender+
+    driver.get("http://192.168.216.97:8088/my_pref/GBOT/graphsequence.html?uid="+gender+
         "&species="+speciesId+
         "&sequence="+sequenceId+
         "&start="+str(start)+
@@ -427,7 +456,7 @@ async def graphsequenceassvg(interaction:discord.Interaction,
     driver.set_window_size(1000, 250) 
 
     # Appel de l'url correspondante pour generer l'image
-    driver.get("http://192.168.0.156:8088/my_pref/GBOT/graphsequence.html?uid="+gender+
+    driver.get("http://192.168.216.97:8088/my_pref/GBOT/graphsequence.html?uid="+gender+
         "&species="+speciesId+
         "&sequence="+sequenceId+
         "&start="+str(start)+
@@ -898,7 +927,7 @@ async def graphit(interaction:discord.Interaction,
     # de l'utilisateur
     files = {'dataFile': open(os.path.join('user', fileuser.filename), 'rb')}
 
-    response = requests.post("http://192.168.0.156:8088/my_pref/Api/server/uploadForBot/",
+    response = requests.post("http://192.168.216.97:8088/my_pref/Api/server/uploadForBot/",
         cookies=cookies,
         files=files)
     
@@ -922,7 +951,7 @@ async def graphit(interaction:discord.Interaction,
     driver.set_window_size(1000, 250) 
 
     # Demande de visualisation de la nouvelle sequence
-    driver.get("http://192.168.0.156:8088/my_pref/GBOT/graphsequence.html?uid="+uid+"&start="+str(start)+"&stop="+str(stop))
+    driver.get("http://192.168.216.97:8088/my_pref/GBOT/graphsequence.html?uid="+uid+"&start="+str(start)+"&stop="+str(stop))
     html_page = driver.page_source
     # Sauvegarde du screenshoot
     driver.save_screenshot(os.path.join('user','screenshot.png'))
@@ -932,7 +961,7 @@ async def graphit(interaction:discord.Interaction,
     # Effacer le contenu de la base de donnee. 
     headers = {'content-type': 'application/json'}
 
-    response = requests.post("http://192.168.0.156:8088/my_pref/Api/server/cleanBot/",
+    response = requests.post("http://192.168.216.97:8088/my_pref/Api/server/cleanBot/",
         data=json.dumps({'uid': uid }) ,headers = headers, cookies=cookies
        )
 
