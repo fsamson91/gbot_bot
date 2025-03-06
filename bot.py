@@ -310,7 +310,6 @@ async def blast(interaction:discord.Interaction,
                  'sequence': sequence,
                  'speciesId': speciesId,
                  'speciesName' : speciesName,
-                 'inter': 'False',
                  'gender': 'Plant'
                  }
     # Mettre en attente discord
