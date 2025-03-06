@@ -305,7 +305,7 @@ async def blast(interaction:discord.Interaction,
     headers = {'content-type': 'application/json'}
     parameter = {'program': program, 
                  'evalue': '1e-5',
-                 'wordsize': 5,
+                 'wordsize': 3,
                  'txt': 1,
                  'sequence': sequence,
                  'speciesId': speciesId,
@@ -316,7 +316,6 @@ async def blast(interaction:discord.Interaction,
     # Mettre en attente discord
     await interaction.response.defer()
     # Requete blast
-    print(api+"/server"+"/Blast/")
     response = requests.post(api+"/server"+"/Blast/",data=json.dumps(parameter),headers = headers, cookies=cookies)
     
     # Recuperation du fichier de resultat
@@ -415,10 +414,11 @@ async def graphsequence(interaction:discord.Interaction,
 
     
     # Creation du screenshoot
-    driver.save_screenshot(os.path.join('user','screenshot.png'))
+    print(os.path.join(os.getcwd(),'user','screenshot.png'))
+    driver.save_screenshot(os.path.join(os.getcwd(),'user','screenshot.png'))
 
     
-    await interaction.followup.send(file=discord.File(os.path.join('user','screenshot.png')))
+    await interaction.followup.send(file=discord.File(os.path.join(os.getcwd(),'user','screenshot.png')))
     
 
 
