@@ -404,12 +404,6 @@ async def graphsequence(interaction:discord.Interaction,
     driver = webdriver.Chrome(service=service, options=options)
     driver.set_window_size(1000, 250) 
 
-    print(gbot_url+"/graphsequence.html?uid="+gender+
-        "&species="+speciesId+
-        "&sequence="+sequenceId+
-        "&start="+str(start)+
-        "&stop="+str(stop))
-
     # Appel de l'url correspondante pour generer l'image
     driver.get(gbot_url+"/graphsequence.html?uid="+gender+
         "&species="+speciesId+
@@ -417,13 +411,11 @@ async def graphsequence(interaction:discord.Interaction,
         "&start="+str(start)+
         "&stop="+str(stop))
     html_page = driver.page_source
-
     
     # Creation du screenshoot
     #print(os.path.join(os.getcwd(),'user','screenshot.png'))
     driver.save_screenshot(os.path.join('user','screenshot.png'))
 
-    
     await interaction.followup.send(file=discord.File(os.path.join('user','screenshot.png')))
     
 
@@ -944,7 +936,7 @@ async def graphit(interaction:discord.Interaction,
     # de l'utilisateur
     files = {'dataFile': open(os.path.join('user', fileuser.filename), 'rb')}
 
-    response = requests.post("http://192.168.216.97:8088/my_pref/Api/server/uploadForBot/",
+    response = requests.post(gbot_url+"/Api/server/uploadForBot/",
         cookies=cookies,
         files=files)
     
@@ -968,7 +960,7 @@ async def graphit(interaction:discord.Interaction,
     driver.set_window_size(1000, 250) 
 
     # Demande de visualisation de la nouvelle sequence
-    driver.get("http://192.168.216.97:8088/my_pref/GBOT/graphsequence.html?uid="+uid+"&start="+str(start)+"&stop="+str(stop))
+    driver.get(gbot_url+"/graphsequence.html?uid="+uid+"&start="+str(start)+"&stop="+str(stop))
     html_page = driver.page_source
     # Sauvegarde du screenshoot
     driver.save_screenshot(os.path.join('user','screenshot.png'))
@@ -978,7 +970,7 @@ async def graphit(interaction:discord.Interaction,
     # Effacer le contenu de la base de donnee. 
     headers = {'content-type': 'application/json'}
 
-    response = requests.post("http://192.168.216.97:8088/my_pref/Api/server/cleanBot/",
+    response = requests.post(gbot_url+"/Api/server/cleanBot/",
         data=json.dumps({'uid': uid }) ,headers = headers, cookies=cookies
        )
 
