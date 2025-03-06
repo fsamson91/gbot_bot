@@ -129,6 +129,11 @@ async def help(ctx):
     helptext+="```"
     await ctx.send(helptext) 
   
+@commands.command(help = "Blah")
+async def l1(self,ctx):
+    commands = [c.name for c in self.client.commands]
+    print(commands)
+    
 # Affiche la liste des commandes du bot
 @tree.command(name="gbot", description="Get list of commands")
 async def gbot(interaction: discord.Interaction):
