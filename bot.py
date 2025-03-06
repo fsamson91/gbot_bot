@@ -38,6 +38,7 @@ web = None
 add = None
 urlGender = None
 gettrans = None
+gbot = None # URL de gbot 
 api = None  # URL de L'API de gbot
 
 
@@ -53,6 +54,7 @@ try:
             pierrick = config['CONFIG']['pierrick']
             papa = config['CONFIG']['papa']
             api = config['CONFIG']['api']
+            gbot = config['CONFIG']['gbot']
             sequence = config['CONFIG']['sequence']
             species = config['CONFIG']['species']
             web = config['CONFIG']['web']
@@ -316,7 +318,7 @@ async def blast(interaction:discord.Interaction,
     # Mettre en attente discord
     await interaction.response.defer()
     # Requete blast
-    response = requests.post("http://192.168.216.97:8088/my_pref/Api/server"+"/Blast/",data=json.dumps(parameter),headers = headers, cookies=cookies)
+    response = requests.post(api+"/server"+"/Blast/",data=json.dumps(parameter),headers = headers, cookies=cookies)
     
     # Recuperation du fichier de resultat
     with open(os.path.join('user', fileuser.filename+"_result"), "wb") as file:
@@ -386,24 +388,33 @@ async def graphsequence(interaction:discord.Interaction,
     from selenium.webdriver.chrome.service import Service
 
     from selenium.webdriver.support.ui import WebDriverWait
+
+    # backup de l'image et envoie de celle ci
+    if not os.path.isdir('user'):
+        os.makedirs('user')
+
+
     service = Service()
     options = webdriver.ChromeOptions()
     options.add_argument("--headless=new")
     driver = webdriver.Chrome(service=service, options=options)
     driver.set_window_size(1000, 250) 
 
+    print(gbot+"/graphsequence.html?uid="+gender+
+        "&species="+speciesId+
+        "&sequence="+sequenceId+
+        "&start="+str(start)+
+        "&stop="+str(stop))
+
     # Appel de l'url correspondante pour generer l'image
-    driver.get("http://192.168.216.97:8088/my_pref/GBOT/graphsequence.html?uid="+gender+
+    driver.get(gbot+"/graphsequence.html?uid="+gender+
         "&species="+speciesId+
         "&sequence="+sequenceId+
         "&start="+str(start)+
         "&stop="+str(stop))
     html_page = driver.page_source
 
-    # backup de l'image et envoie de celle ci
-    if not os.path.isdir('user'):
-        os.makedirs('user')
-
+    
     # Creation du screenshoot
     driver.save_screenshot(os.path.join('user','screenshot.png'))
 
@@ -455,8 +466,14 @@ async def graphsequenceassvg(interaction:discord.Interaction,
     driver = webdriver.Chrome(service=service, options=options)
     driver.set_window_size(1000, 250) 
 
+    print(gbot+"/graphsequence.html?uid="+gender+
+      "&species="+speciesId+
+      "&sequence="+sequenceId+
+      "&start="+str(start)+
+      "&stop="+str(stop))
+
     # Appel de l'url correspondante pour generer l'image
-    driver.get("http://192.168.216.97:8088/my_pref/GBOT/graphsequence.html?uid="+gender+
+    driver.get(gbot+"/graphsequence.html?uid="+gender+
         "&species="+speciesId+
         "&sequence="+sequenceId+
         "&start="+str(start)+
