@@ -121,24 +121,16 @@ async def on_ready():
     await client.change_presence(activity=discord.Game("/gbot"))
     
 
-@tree.command(name="help", description="Returns all commands available")
-async def help(ctx):
-    helptext = "```"
-    for command in self.bot.commands:
-        helptext+=f"{command}\n"
-    helptext+="```"
-    await ctx.send(helptext) 
-  
-@tree.command(help = "Blah")
-async def l1(self,ctx):
-    commands = [c.name for c in self.client.commands]
-    print(commands)
+################## A MODIFIER ######################""
 
 # Affiche la liste des commandes du bot
 @tree.command(name="gbot", description="Get list of commands")
 async def gbot(interaction: discord.Interaction):
     await interaction.response.send_message('`/gbot`: Get list of commands \n`/set-gender` :  \n`/get-translation` : Get proteic sequence of a cds \n`/get-species` : Get sequence list\n`/website`: Get website link ')
- 
+
+################## A MODIFIER ######################""
+
+
 # Donne l'adresse du site web de gbot
 @tree.command(name="website", description="Get website link")
 async def website(interaction:discord.Interaction):
