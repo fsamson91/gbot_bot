@@ -377,7 +377,6 @@ async def graphsequence(interaction:discord.Interaction,
     # Call discord to wait 
     await interaction.response.defer()
 
-    print("LALAL"+os.path.join(os.getcwd(),'user','screenshot.png'))
 
     # Recuperation des parametres venant de l'autocompletion    
     (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
@@ -393,15 +392,11 @@ async def graphsequence(interaction:discord.Interaction,
     if not os.path.isdir('user'):
         os.makedirs('user')
 
-    if os.path.exists(os.path.join(os.getcwd(),'user','screenshot.png')):
-      os.remove(os.path.join(os.getcwd(),'user','screenshot.png'))
-    else:
-      print("The file does not exist")
-
+    
     service = Service()
     options = webdriver.ChromeOptions()
     options.add_argument("--headless=new")
-    options.add_argument('user-data-dir='+os.path.join(os.getcwd(),'user'))
+    #options.add_argument('user-data-dir='+os.path.join(os.getcwd(),'user'))
 
     driver = webdriver.Chrome(service=service, options=options)
     driver.set_window_size(1000, 250) 
@@ -422,11 +417,11 @@ async def graphsequence(interaction:discord.Interaction,
 
     
     # Creation du screenshoot
-    print(os.path.join(os.getcwd(),'user','screenshot.png'))
+    #print(os.path.join(os.getcwd(),'user','screenshot.png'))
     driver.save_screenshot('screenshot.png')
 
     
-    await interaction.followup.send(file=discord.File(os.path.join(os.getcwd(),'user','screenshot.png')))
+    await interaction.followup.send(file=discord.File(os.path.join('user','screenshot.png')))
     
 
 
