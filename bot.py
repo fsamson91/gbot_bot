@@ -468,12 +468,7 @@ async def graphsequenceassvg(interaction:discord.Interaction,
     driver = webdriver.Chrome(service=service, options=options)
     driver.set_window_size(1000, 250) 
 
-    print(gbot+"/graphsequence.html?uid="+gender+
-      "&species="+speciesId+
-      "&sequence="+sequenceId+
-      "&start="+str(start)+
-      "&stop="+str(stop))
-
+    
     # Appel de l'url correspondante pour generer l'image
     driver.get(gbot+"/graphsequence.html?uid="+gender+
         "&species="+speciesId+
