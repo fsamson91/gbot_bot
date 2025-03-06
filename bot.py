@@ -315,7 +315,7 @@ async def blast(interaction:discord.Interaction,
     # Mettre en attente discord
     await interaction.response.defer()
     # Requete blast
-    print(api+"/server"+"/Blast/)
+    print(api+"/server"+"/Blast/")
     response = requests.post(api+"/server"+"/Blast/",data=json.dumps(parameter),headers = headers, cookies=cookies)
     
     # Recuperation du fichier de resultat
