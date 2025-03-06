@@ -377,7 +377,7 @@ async def graphsequence(interaction:discord.Interaction,
     # Call discord to wait 
     await interaction.response.defer()
 
-    print("LALAL"os.path.join(os.getcwd(),'user','screenshot.png'))
+    print("LALAL"+os.path.join(os.getcwd(),'user','screenshot.png'))
 
     # Recuperation des parametres venant de l'autocompletion    
     (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
