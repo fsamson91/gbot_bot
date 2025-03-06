@@ -353,6 +353,9 @@ async def sequence_autocomplete(interaction: discord.Interaction,current: str,) 
         return [ app_commands.Choice(name=seq['accession'], value=str(seq['id'])+'|'+str(seq['accession'])) for seq in data if current.lower() in seq['accession'].lower() ]
         
 
+
+
+
 '''
     Fonction d'affichage d'un graph a partir d'un bout de sequence 
     de la base de donnees
@@ -418,7 +421,7 @@ async def graphsequence(interaction:discord.Interaction,
     
     # Creation du screenshoot
     #print(os.path.join(os.getcwd(),'user','screenshot.png'))
-    driver.save_screenshot('screenshot.png')
+    driver.save_screenshot(os.path.join('user','screenshot.png'))
 
     
     await interaction.followup.send(file=discord.File(os.path.join('user','screenshot.png')))
