@@ -38,7 +38,7 @@ web = None
 add = None
 urlGender = None
 gettrans = None
-gbot = None # URL de gbot 
+gbot_url = None # URL de gbot 
 api = None  # URL de L'API de gbot
 
 
@@ -54,7 +54,7 @@ try:
             pierrick = config['CONFIG']['pierrick']
             papa = config['CONFIG']['papa']
             api = config['CONFIG']['api']
-            gbot = config['CONFIG']['gbot']
+            gbot_url = config['CONFIG']['gbot']
             sequence = config['CONFIG']['sequence']
             species = config['CONFIG']['species']
             web = config['CONFIG']['web']
@@ -401,14 +401,14 @@ async def graphsequence(interaction:discord.Interaction,
     driver = webdriver.Chrome(service=service, options=options)
     driver.set_window_size(1000, 250) 
 
-    print(gbot+"/graphsequence.html?uid="+gender+
+    print(gbot_url+"/graphsequence.html?uid="+gender+
         "&species="+speciesId+
         "&sequence="+sequenceId+
         "&start="+str(start)+
         "&stop="+str(stop))
 
     # Appel de l'url correspondante pour generer l'image
-    driver.get(gbot+"/graphsequence.html?uid="+gender+
+    driver.get(gbot_url+"/graphsequence.html?uid="+gender+
         "&species="+speciesId+
         "&sequence="+sequenceId+
         "&start="+str(start)+
@@ -470,7 +470,7 @@ async def graphsequenceassvg(interaction:discord.Interaction,
 
     
     # Appel de l'url correspondante pour generer l'image
-    driver.get(gbot+"/graphsequence.html?uid="+gender+
+    driver.get(gbot_url+"/graphsequence.html?uid="+gender+
         "&species="+speciesId+
         "&sequence="+sequenceId+
         "&start="+str(start)+
