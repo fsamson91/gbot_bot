@@ -401,7 +401,7 @@ async def graphsequence(interaction:discord.Interaction,
     service = Service()
     options = webdriver.ChromeOptions()
     options.add_argument("--headless=new")
-    options.add_argument('user-data-dir='+os.path.join(os.getcwd(),'user','screenshot.png'))
+    options.add_argument('user-data-dir='+os.path.join(os.getcwd(),'user'))
 
     driver = webdriver.Chrome(service=service, options=options)
     driver.set_window_size(1000, 250) 
@@ -423,7 +423,7 @@ async def graphsequence(interaction:discord.Interaction,
     
     # Creation du screenshoot
     print(os.path.join(os.getcwd(),'user','screenshot.png'))
-    driver.save_screenshot(os.path.join(os.getcwd(),'user','screenshot.png'))
+    driver.save_screenshot('screenshot.png')
 
     
     await interaction.followup.send(file=discord.File(os.path.join(os.getcwd(),'user','screenshot.png')))
