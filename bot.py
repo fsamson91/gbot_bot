@@ -471,7 +471,7 @@ async def graphsequenceassvg(interaction:discord.Interaction,
         "&start="+str(start)+
         "&stop="+str(stop))
     html_page = driver.page_source
-
+    print(html_page)
     import re
     exp = re.search('<svg.+?(</svg>)',html_page)
     svg = exp.group(0)
