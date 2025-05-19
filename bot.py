@@ -273,7 +273,7 @@ async def getsequences(interaction: discord.Interaction, species: str):
                 program programme a utilise choisi dans une liste
                 species (autocompletion)
 '''
-@tree.command(name="blast")
+@tree.command(name="blast", description="Blast your sequence on GBOT species")
 @app_commands.autocomplete(species=species_autocomplete)
 async def blast(interaction:discord.Interaction, 
                  fileuser:discord.Attachment,
@@ -364,7 +364,7 @@ async def sequence_autocomplete(interaction: discord.Interaction,current: str,) 
                 start position de debut
                 stop position de fin
 '''
-@tree.command(name="graph-sequence")
+@tree.command(name="graph-sequence", description="Get a picture of a region of sequence in GBOT")
 @app_commands.autocomplete(species=sequence_autocomplete, sequence=sequence_autocomplete)
 async def graphsequence(interaction:discord.Interaction, 
                     species:str,
@@ -430,7 +430,7 @@ async def graphsequence(interaction:discord.Interaction,
                 start position de debut
                 stop position de fin
 '''
-@tree.command(name="graph-sequence-svg")
+@tree.command(name="graph-sequence-svg",  description="Get a picture in SVG format of a region of sequence in GBOT")
 @app_commands.autocomplete(species=sequence_autocomplete, sequence=sequence_autocomplete)
 async def graphsequenceassvg(interaction:discord.Interaction, 
                     species:str,
@@ -513,7 +513,7 @@ async def graphsequenceassvg(interaction:discord.Interaction,
                 stop position de fin 
 '''
 
-@tree.command(name="graph-your-sequence")
+@tree.command(name="graph-your-sequence", description="Get a picture your sequence in genbank file format")
 async def graphit(interaction:discord.Interaction, 
                  fileuser:discord.Attachment,
                  start: Optional[int] = 0,
@@ -584,7 +584,7 @@ async def graphit(interaction:discord.Interaction,
         data=json.dumps({'uid': uid }) ,headers = headers, cookies=cookies
        )
 
-@tree.command(name="help", description="Affiche la liste des commandes slash disponibles.")
+@tree.command(name="help",  description="Show the list of gbot-bot command")
 async def help_command(interaction: discord.Interaction):
     embed = discord.Embed(title="📘 Commandes disponibles", color=discord.Color.blue())
     print(tree)
