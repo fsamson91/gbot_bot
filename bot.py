@@ -465,11 +465,13 @@ async def graphsequenceassvg(interaction:discord.Interaction,
 
     
     # Appel de l'url correspondante pour generer l'image
-    driver.get(gbot_url+"/graphsequence.html?uid="+gender+
+    url = gbot_url+"/graphsequence.html?uid="+gender+
         "&species="+speciesId+
         "&sequence="+sequenceId+
         "&start="+str(start)+
-        "&stop="+str(stop))
+        "&stop="+str(stop)
+    print(url)
+    driver.get(url)
     html_page = driver.page_source
     print(html_page)
     import re
