@@ -587,7 +587,6 @@ async def graphit(interaction:discord.Interaction,
 @tree.command(name="help",  description="Show the list of gbot-bot command")
 async def help_command(interaction: discord.Interaction):
     embed = discord.Embed(title="📘 Commandes disponibles", color=discord.Color.blue())
-    print(tree)
     for command in tree.walk_commands():
         embed.add_field(name=f"/{command.name}", value=command.description or "Pas de description", inline=False)
 
