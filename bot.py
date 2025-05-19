@@ -121,14 +121,6 @@ async def on_ready():
     await client.change_presence(activity=discord.Game("/gbot"))
     
 
-################## A MODIFIER ######################""
-
-# Affiche la liste des commandes du bot
-@tree.command(name="gbot", description="Get list of commands")
-async def gbot(interaction: discord.Interaction):
-    await interaction.response.send_message('`/gbot`: Get list of commands \n`/set-gender` :  \n`/get-translation` : Get proteic sequence of a cds \n`/get-species` : Get sequence list\n`/website`: Get website link ')
-
-################## A MODIFIER ######################""
 
 
 # Donne l'adresse du site web de gbot
