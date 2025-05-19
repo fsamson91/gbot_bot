@@ -483,7 +483,7 @@ async def graphsequenceassvg(interaction:discord.Interaction,
     if not os.path.isdir('user'):
         os.makedirs('user')
 
-    with open('html_style_for_svg.html', 'r') as style:
+    with open('html_style_for_svg_graph.html', 'r') as style:
         style = style.read()
 
     svg = svg.replace("><", ">\n"+style+"<",1)
