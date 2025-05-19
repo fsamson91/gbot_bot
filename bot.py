@@ -470,14 +470,11 @@ async def graphsequenceassvg(interaction:discord.Interaction,
         "&sequence="+sequenceId+\
         "&start="+str(start)+\
         "&stop="+str(stop)
-    print(url)
     driver.get(url)
     html_page = driver.page_source
-    print(html_page)
     import re
     exp = re.search('<svg.+?(</svg>)',html_page)
     svg = exp.group(0)
-    print(svg)
     
      # backup de l'image et envoie de celle ci
     if not os.path.isdir('user'):
