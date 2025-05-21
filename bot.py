@@ -7,6 +7,8 @@ import sys
 import os
 
 from discord import app_commands
+from discord.ui import View, Select
+
 from typing import List, Literal, Optional
 
 userGender = {}
@@ -185,32 +187,45 @@ async def getsequencetxt(interaction: discord.Interaction, cds:str):
 
 
 
-def getSpeciesListAsJson(interaction: discord.Interaction) -> str:
+def getSpeciesListAsJson(interaction: discord.Interaction) -> list:
+    ''' fonction de recuperation de la liste 
+        des especes pour un genre donné
+        @param interaction : objet de discord
+
+        @return : la liste des especes.
+    '''
     gender = checkgender(interaction.user)
-   
+    # Definition du genre
     cookies = {'gender': gender}    
 
+    # Appel de l'url de connection a GBOT pour 
+    # avoir les species cf bot.cfg
     jsonStr= requests.get(species, cookies=cookies).text
-    data = json.loads(jsonStr)
-    return data
+    # Recuperation de la liste json et transformation 
+    # en list python
+    speciesList = json.loads(jsonStr)
+    return speciesList
 
 
-'''
-    fonction de recuperation de la liste des especes
-    dans la base de donnees
-'''
+
 @tree.command(name="get-species", description="Get species list for current gender")
 async def getspecies(interaction: discord.Interaction):
+    '''
+    fonction de recuperation de la liste des especes
+    dans la base de donnees et l'affiche sur l'interface discord
+
+    @param interaction : objet de discord
+    '''
     # Recuperation du genre
     gender = checkgender(interaction.user)
 
     # Recuperation de la liste a partir du json
-    data = getSpeciesListAsJson(interaction)
+    speciesList = getSpeciesListAsJson(interaction)
     
-    if data!=None and 'id' in data[0] : 
+    if speciesList!=None and 'id' in speciesList[0] : 
         # Creation du message de retour
         output = f'{interaction.user} connected on {gender}\n```'
-        for d in data:
+        for d in speciesList:
             output += d['name']+'\n'
         output+= '```'
         await interaction.response.send_message(output)
@@ -219,22 +234,33 @@ async def getspecies(interaction: discord.Interaction):
 
 
 
-''' 
-    autocompletion de l'espece a partir de la liste dans la base de donnees
-'''
+
 async def species_autocomplete(interaction: discord.Interaction,current: str,) -> List[app_commands.Choice[str]]:
-    data = getSpeciesListAsJson(interaction)
-    return [ app_commands.Choice(name=spe['name'], value=str(spe['id'])+'|'+str(spe['name'])) for spe in data if current.lower() in spe['name'].lower() ]
+    ''' 
+    autocompletion de l'espece a partir de la liste dans la base de donnees
+    @param interaction : objet de discord
+    @param current : espece en cours
+
+    @return retourne la liste des especes selectionnables
+    '''
+    speciesList = getSpeciesListAsJson(interaction)
+    return [ app_commands.Choice(name=spe['name'], value=str(spe['id'])+'|'+str(spe['name'])) for spe in speciesList if current.lower() in spe['name'].lower() ]
 
 
-'''
-    Fontion de recuperation de la liste des sequences
-    pour une espece choisi en parametre
-    parametre : species (autocompletion)
-'''
+
 @tree.command(name="get-sequences", description="Get sequence list for a species")
 @app_commands.autocomplete(species=species_autocomplete)
 async def getsequences(interaction: discord.Interaction, species: str):
+    '''
+    Fontion de recuperation de la liste des sequences
+    pour une espece choisi en parametre, l'affichage se fait dans
+    l'interface discord
+    
+    @param_discord : species (autocompletion)
+    @param interaction : objet de discord
+    @param species: species choisi par l'utilisateur
+    
+    '''
     # Recuperation du genre
     gender = checkgender(interaction.user)
     
@@ -243,13 +269,16 @@ async def getsequences(interaction: discord.Interaction, species: str):
 
     # Recuperation de l'espece venanat de l'autocompletion
     (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
-    # Requete de recuperation des informations
+    # Appel de l'url de connection a GBOT pour 
+    # avoir les Sequences cf bot.cfg : url_api/Chromosome  
+    # on passe les cookies pour avoir le genre
     jsonStr= requests.get(api+'/Chromosome/'+speciesId, cookies=cookies).text
-    data = json.loads(jsonStr)
-    if data!=None and 'id' in data[0] : 
+    sequencesList = json.loads(jsonStr)
+    # Mise en page pour discord
+    if sequencesList!=None and 'id' in sequencesList[0] : 
         # Creation de la sortie.
         output = f'{interaction.user} connected on {gender}\n```'
-        for d in data:
+        for d in sequencesList:
             output += d['name']+'\t'+str(d['length'])+"bp\n"
         output+= '```'
         await interaction.response.send_message(output)
@@ -257,14 +286,11 @@ async def getsequences(interaction: discord.Interaction, species: str):
         await interaction.response.send_message('Species invalide/inexistant !')
 
 
-'''
-    Fonction d'execution de la commande blast(n,p,x,t..n) 
-    sur une sequence venant d'un upload.
-    sur une espece choisi en autocompletion
-    parametre : fileuser fichier a blaster
-                program programme a utilise choisi dans une liste
-                species (autocompletion)
-'''
+
+
+
+
+
 @tree.command(name="blast", description="Blast your sequence on GBOT species")
 @app_commands.autocomplete(species=species_autocomplete)
 async def blast(interaction:discord.Interaction, 
@@ -272,6 +298,15 @@ async def blast(interaction:discord.Interaction,
                  program: Literal['blastp', 'blastn', 'blastx', 'tblastn'],
                  species:str
                  ):
+    '''
+    Fonction d'execution de la commande blast(n,p,x,t..n) 
+    sur une sequence venant d'un upload.
+    sur une espece choisi en autocompletion
+    @param interaction : objet de discord
+    @param fileuser : fichier a blaster
+    @param program : programme a utilise choisi dans une liste
+    @species species (autocompletion)
+    '''
     # Recuperation de l'espece venanat de l'autocompletion   
     (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
     # creation si necessaire du repertoire de sortie
@@ -307,7 +342,10 @@ async def blast(interaction:discord.Interaction,
                  }
     # Mettre en attente discord
     await interaction.response.defer()
-    # Requete blast
+    # Appel de l'url de connection a GBOT pour 
+    # avoir les Blast cf bot.cfg : url_api/server/Blast  
+    # on passe les cookies pour avoir le genre
+    # on passe les parametres sous forme de str json en mode post
     response = requests.post(api+"/server"+"/Blast/",data=json.dumps(parameter),headers = headers, cookies=cookies)
     
     # Recuperation du fichier de resultat
@@ -326,27 +364,164 @@ async def blast(interaction:discord.Interaction,
     await interaction.followup.send(embed=detailsEmbed, file=discord.File(os.path.join('user', fileuser.filename+"_result")))
 
 
-''' 
-    autocompletion double : species puis sequence de l'espece
-'''
+
 async def sequence_autocomplete(interaction: discord.Interaction,current: str,) -> List[app_commands.Choice[str]]:
-    data = getSpeciesListAsJson(interaction)
-    print(interaction.namespace.species)
+    ''' 
+        autocompletion double : species puis sequence de l'espece
+        @param interaction : objet de discord
+        @param current : sequence en cours
+
+        @return retourne la liste des sequences selectionnables
+    '''
+    # recuperation du parametre necessaire pour fonctionner ici
+    # l'espece! qui est passe dans l'objet discord
     species = interaction.namespace.species
-    if species == "":
-        return [ app_commands.Choice(name=spe['name'], value=str(spe['id'])+'|'+str(spe['name'])) for spe in data if current.lower() in spe['name'].lower() ]
-    else: 
+    # On recupere le Id
+    (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
+
+    # recuperation du genre
+    gender = checkgender(interaction.user)
+    cookies = {'gender': gender} 
+
+    # Appel de l'url de connection a GBOT pour 
+    # avoir les Sequences cf bot.cfg : url_api/Chromosome/speciesId  
+    # on passe les cookies pour avoir le genre
+    jsonStr= requests.get(api+'/Chromosome/'+speciesId, cookies=cookies).text
+    data = json.loads(jsonStr)
+    return [ app_commands.Choice(name=seq['accession'], value=str(seq['id'])+'|'+str(seq['accession'])) for seq in data if current.lower() in seq['accession'].lower() ]
+
+
+
+
+# ''' 
+#      autocompletion triple : species puis sequence de l'espece, puis feature a afficher
+# '''
+# async def featureList_autocomplete(interaction: discord.Interaction,current: str,) -> List[app_commands.Choice[str]]:
+#     speciesList = getSpeciesListAsJson(interaction)
+#     print(interaction.namespace.species)
+#     species = interaction.namespace.species
+#     if species == "":
+#         return [ app_commands.Choice(name=spe['name'], value=str(spe['id'])+'|'+str(spe['name'])) for spe in speciesList if current.lower() in spe['name'].lower() ]
+#     else: 
+#         gender = checkgender(interaction.user)
+#         cookies = {'gender': gender} 
+
+#         (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
+#         jsonStr= requests.get(api+'/Chromosome/'+speciesId, cookies=cookies).text
+#         data = json.loads(jsonStr)
+#         return [ app_commands.Choice(name=seq['accession'], value=str(seq['id'])+'|'+str(seq['accession'])) for seq in data if current.lower() in seq['accession'].lower() ]
+        
+
+class FeatureSelect(discord.ui.Select):
+    def __init__(self, interaction, species, sequence, start, stop, shownames):
+       
+
+        self.species = species
+        self.sequence = sequence
+        self.start = start
+        self.stop = stop
+        self.shownames = shownames
+
+        # Recuperation du genre
         gender = checkgender(interaction.user)
+
+        # Initialisation du cookies utilisé par GBOT
         cookies = {'gender': gender} 
 
         (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
-        jsonStr= requests.get(api+'/Chromosome/'+speciesId, cookies=cookies).text
-        data = json.loads(jsonStr)
-        return [ app_commands.Choice(name=seq['accession'], value=str(seq['id'])+'|'+str(seq['accession'])) for seq in data if current.lower() in seq['accession'].lower() ]
+        jsonStr= requests.get(api+'/Species/FeatureTypesFor/'+speciesId, cookies=cookies).text
+        featureTypes =  json.loads(jsonStr)
+        featureTypeList = featureTypes ['type']
+        featureViewList = featureTypes ['view']
+
+
+        options = []
+        for idx in range(len(featureTypeList)):
+            d = discord.SelectOption(label=featureViewList[idx], value=featureTypeList[idx])
+            options.append(d)
+
+      
+
+        super().__init__(
+            placeholder="Features to show",
+            min_values=1,
+            max_values=len(options),
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        feature_selected = self.values
         
 
+        species =self.species  
+        sequence =self.sequence  
+        start =self.start  
+        stop =self.stop  
 
 
+        # Recuperation du genre
+        gender = checkgender(interaction.user)
+
+        # Initialisation du cookies utilisé par GBOT
+        cookies = {'gender': gender} 
+
+    
+        # Call discord to wait 
+        await interaction.response.defer()
+
+
+        # Recuperation des parametres venant de l'autocompletion    
+        (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
+        (sequenceId, sequenceName) = sequence.split('|') # regarder la value de l'autocompletion
+
+        # Utilisation de la librairie permettant de simuler un navigateur web
+        from selenium import webdriver
+        from selenium.webdriver.chrome.service import Service
+
+        from selenium.webdriver.support.ui import WebDriverWait
+
+        # backup de l'image et envoie de celle ci
+        if not os.path.isdir('user'):
+            os.makedirs('user')
+
+        
+        service = Service()
+        options = webdriver.ChromeOptions()
+        options.add_argument("--headless=new")
+        #options.add_argument('user-data-dir='+os.path.join(os.getcwd(),'user'))
+
+        driver = webdriver.Chrome(service=service, options=options)
+        driver.set_window_size(1000, 250) 
+
+        # Appel de l'url correspondante pour generer l'image
+        driver.get(gbot_url+"/graphsequence.html?uid="+gender+
+            "&species="+speciesId+
+            "&sequence="+sequenceId+
+            "&start="+str(start)+
+            "&stop="+str(stop)+
+            "&features="+','.join(feature_selected)+
+            "&names="+str(self.shownames))
+        print(gbot_url+"/graphsequence.html?uid="+gender+
+            "&species="+speciesId+
+            "&sequence="+sequenceId+
+            "&start="+str(start)+
+            "&stop="+str(stop)+
+            "&features="+','.join(feature_selected)+
+            "&names="+str(self.shownames))
+        html_page = driver.page_source
+        
+        # Creation du screenshoot
+        #print(os.path.join(os.getcwd(),'user','screenshot.png'))
+        driver.save_screenshot(os.path.join('user','screenshot.png'))
+
+        await interaction.followup.send(file=discord.File(os.path.join('user','screenshot.png')))
+
+
+class FeatureView(discord.ui.View):
+    def __init__(self,  interaction, species, sequence, start, stop, shownames):
+        super().__init__(timeout=60)
+
+        self.add_item(FeatureSelect(interaction, species, sequence, start, stop, shownames))
 
 '''
     Fonction d'affichage d'un graph a partir d'un bout de sequence 
@@ -357,58 +532,71 @@ async def sequence_autocomplete(interaction: discord.Interaction,current: str,) 
                 stop position de fin
 '''
 @tree.command(name="graph-sequence", description="Get a picture of a region of sequence in GBOT")
-@app_commands.autocomplete(species=sequence_autocomplete, sequence=sequence_autocomplete)
+@app_commands.describe(shownames="True pour activer, False pour désactiver")
+
+@app_commands.autocomplete(species=species_autocomplete, sequence=sequence_autocomplete)
 async def graphsequence(interaction:discord.Interaction, 
                     species:str,
                     sequence:str,
                  start: int,
-                 stop: int
+                 stop: int,
+                 shownames: bool
                  ):
-    # Recuperation du genre
-    gender = checkgender(interaction.user)
 
-    # Initialisation du cookies utilisé par GBOT
-    cookies = {'gender': gender} 
-    # Call discord to wait 
-    await interaction.response.defer()
+                
+    await interaction.response.send_message(
+        content="Select feature to draw in the list below :",
+        view=FeatureView(interaction, species, sequence, start, stop, shownames),
+        ephemeral=True
+    )
+
+    # # Recuperation du genre
+    # gender = checkgender(interaction.user)
+
+    # # Initialisation du cookies utilisé par GBOT
+    # cookies = {'gender': gender} 
+
+   
+    # # Call discord to wait 
+    # await interaction.response.defer()
 
 
-    # Recuperation des parametres venant de l'autocompletion    
-    (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
-    (sequenceId, sequenceName) = sequence.split('|') # regarder la value de l'autocompletion
+    # # Recuperation des parametres venant de l'autocompletion    
+    # (speciesId, speciesName) = species.split('|') # regarder la value de l'autocompletion
+    # (sequenceId, sequenceName) = sequence.split('|') # regarder la value de l'autocompletion
 
-    # Utilisation de la librairie permettant de simuler un navigateur web
-    from selenium import webdriver
-    from selenium.webdriver.chrome.service import Service
+    # # Utilisation de la librairie permettant de simuler un navigateur web
+    # from selenium import webdriver
+    # from selenium.webdriver.chrome.service import Service
 
-    from selenium.webdriver.support.ui import WebDriverWait
+    # from selenium.webdriver.support.ui import WebDriverWait
 
-    # backup de l'image et envoie de celle ci
-    if not os.path.isdir('user'):
-        os.makedirs('user')
+    # # backup de l'image et envoie de celle ci
+    # if not os.path.isdir('user'):
+    #     os.makedirs('user')
 
     
-    service = Service()
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless=new")
-    #options.add_argument('user-data-dir='+os.path.join(os.getcwd(),'user'))
+    # service = Service()
+    # options = webdriver.ChromeOptions()
+    # options.add_argument("--headless=new")
+    # #options.add_argument('user-data-dir='+os.path.join(os.getcwd(),'user'))
 
-    driver = webdriver.Chrome(service=service, options=options)
-    driver.set_window_size(1000, 250) 
+    # driver = webdriver.Chrome(service=service, options=options)
+    # driver.set_window_size(1000, 250) 
 
-    # Appel de l'url correspondante pour generer l'image
-    driver.get(gbot_url+"/graphsequence.html?uid="+gender+
-        "&species="+speciesId+
-        "&sequence="+sequenceId+
-        "&start="+str(start)+
-        "&stop="+str(stop))
-    html_page = driver.page_source
+    # # Appel de l'url correspondante pour generer l'image
+    # driver.get(gbot_url+"/graphsequence.html?uid="+gender+
+    #     "&species="+speciesId+
+    #     "&sequence="+sequenceId+
+    #     "&start="+str(start)+
+    #     "&stop="+str(stop))
+    # html_page = driver.page_source
     
-    # Creation du screenshoot
-    #print(os.path.join(os.getcwd(),'user','screenshot.png'))
-    driver.save_screenshot(os.path.join('user','screenshot.png'))
+    # # Creation du screenshoot
+    # #print(os.path.join(os.getcwd(),'user','screenshot.png'))
+    # driver.save_screenshot(os.path.join('user','screenshot.png'))
 
-    await interaction.followup.send(file=discord.File(os.path.join('user','screenshot.png')))
+    # await interaction.followup.send(file=discord.File(os.path.join('user','screenshot.png')))
     
 
 
@@ -430,11 +618,16 @@ async def graphsequenceassvg(interaction:discord.Interaction,
                  start: int,
                  stop: int
                  ):
+
+    
     # Recuperation du genre
     gender = checkgender(interaction.user)
 
     # Initialisation du cookies utilisé par GBOT
     cookies = {'gender': gender} 
+
+    
+
     # Call discord to wait 
     await interaction.response.defer()
 
