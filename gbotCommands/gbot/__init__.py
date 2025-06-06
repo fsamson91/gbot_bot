@@ -11,10 +11,6 @@ userGender = {}
 
 
 #  TODO:
-#  Blast passer par un upload de la sequence car probleme avec 
-#  la methode post de python
-#  graph_sequence_svg il faut la rendre fonctionnel car pour l'instant
-#  c'est graph_sequence.
 #  graph-your-sequence a remettre en ligne egalement... 
 
 def getSpeciesListAsJson(interaction: discord.Interaction) -> list:
