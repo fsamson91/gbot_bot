@@ -11,12 +11,13 @@ from gbotCommands import api, gbot_url, mycommand
 
 
 class FeatureSelect(discord.ui.Select):
-    def __init__(self, interaction, species, sequence, start, stop, shownames):
+    def __init__(self, interaction, species, sequence, start, stop, shownames, svg):
         self.species = species
         self.sequence = sequence
         self.start = start
         self.stop = stop
         self.shownames = shownames
+        self.svg = svg
 
         # Recuperation du genre
         gender = checkgender(interaction.user)
@@ -101,18 +102,54 @@ class FeatureSelect(discord.ui.Select):
             "&names="+str(self.shownames))
         html_page = driver.page_source
         
-        # Creation du screenshoot
-        #print(os.path.join(os.getcwd(),'user','screenshot.png'))
-        driver.save_screenshot(os.path.join('user','screenshot.png'))
 
-        await interaction.followup.send(file=discord.File(os.path.join('user','screenshot.png')))
+        if self.svg:
+            import re
+            exp = re.search(r'<svg.+?(</svg>)',html_page)
+            svg = exp.group(0)
+        
+            # backup de l'image et envoie de celle ci
+            if not os.path.isdir('user'):
+                os.makedirs('user')
+
+            with open(os.path.join(os.path.dirname(__file__),'html_style_for_svg_graph.html'), 'r') as style:
+                style = style.read()
+            
+            print("ici")
+            print(style)
+
+            svg = svg.replace("><", ">\n"+style+"<",1)
+
+            svg = svg.replace("currentColor", "black")
+
+            # Recuperation du fichier de resultat
+            with open(os.path.join('user', "result.svg"), "w") as file:
+                file.write(str(svg))
+            file.close()
+            # et les include dans le svg apres la balise svg.
+            entityFileName = "result.svg"
+
+            # Send embed notifying start of the spam stream
+            detailsEmbed = discord.Embed(
+                colour=discord.Colour.red(),
+                title=f"See `{entityFileName}` for your svg result",
+                description="Due to discord character limits regarding embeds, the results have to be sent in a file"
+            )
+            await interaction.followup.send(embed=detailsEmbed, file=discord.File(os.path.join('user', "result.svg")))
+
+        else :
+            # Creation du screenshoot
+            #print(os.path.join(os.getcwd(),'user','screenshot.png'))
+            driver.save_screenshot(os.path.join('user','screenshot.png'))
+
+            await interaction.followup.send(file=discord.File(os.path.join('user','screenshot.png')))
 
 
 class FeatureView(discord.ui.View):
-    def __init__(self,  interaction, species, sequence, start, stop, shownames):
+    def __init__(self,  interaction, species, sequence, start, stop, shownames, svg=False):
         super().__init__(timeout=60)
 
-        self.add_item(FeatureSelect(interaction, species, sequence, start, stop, shownames))
+        self.add_item(FeatureSelect(interaction, species, sequence, start, stop, shownames, svg))
 
 
 
@@ -176,7 +213,7 @@ class GBOTGraphCog(commands.Cog):
                     
         await interaction.response.send_message(
             content="Select feature to draw in the list below :",
-            view=FeatureView(interaction, species, sequence, start, stop, shownames),
+            view=FeatureView(interaction, species, sequence, start, stop, shownames, True),
             ephemeral=True
         )
 
