@@ -16,8 +16,13 @@ async def on_command_error(ctx, error):
 @bot.event
 async def on_ready():
     print(f"Connecté en tant que {bot.user} ({bot.user.id})")
+    activity = discord.Game(name="GBOT: /help to explore commands")
+    await bot.change_presence(status=discord.Status.online, activity=activity)
+
     await bot.tree.sync()  # Important : synchronise les slash commands
     print("Commandes slash synchronisées")
+
+
 
 async def main():
     async with bot:
